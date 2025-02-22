@@ -138,15 +138,21 @@
     <ClCompile Include="src\affine.cpp" />
     <ClCompile Include="src\Hadamard.cpp" />
     <ClCompile Include="src\POB.cpp" />
+    <ClCompile Include="src\processWM.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\affine.h" />
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\Hadamard.h" />
     <ClInclude Include="src\POB.h" />
+    <ClInclude Include="src\processWM.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\x64\Release\images\watermark.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\x64\Release\keys\KEY_A" />
+    <None Include="..\x64\Release\keys\KEY_B" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

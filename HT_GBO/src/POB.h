@@ -1,13 +1,12 @@
 #ifndef POB_H
 #define POB_H
 
-#include <unordered_map>
 #include <vector>
-#include <bitset>
-#include <algorithm>
 #include <utility>
 
-std::pair<unsigned char, unsigned char> pob(unsigned short val);
-unsigned short inverse_pob(unsigned char target_pob, unsigned char r);
+// Кодирование 4-битного числа в POB
+std::pair<int, int> pob(int val);
+// Декодирование POB в 4-битное число
+int inverse_pob(int target_pob, int r);
 
 #endif // POB_H
