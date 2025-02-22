@@ -1,0 +1,1 @@
+#define WM_SIZE 32
