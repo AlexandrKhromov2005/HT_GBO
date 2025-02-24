@@ -27,7 +27,11 @@
     <ClCompile Include="src\affine.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+<<<<<<< HEAD
     <ClCompile Include="src\image_processing.cpp">
+=======
+    <ClCompile Include="src\processWM.cpp">
+>>>>>>> f7080ffa321cce06b1056cbaa5e26830b9f7fc8c
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,7 +48,11 @@
     <ClInclude Include="src\config.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="src\image_processing.h">
+=======
+    <ClInclude Include="src\processWM.h">
+>>>>>>> f7080ffa321cce06b1056cbaa5e26830b9f7fc8c
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
@@ -52,5 +60,9 @@
     <Image Include="..\x64\Release\images\watermark.png">
       <Filter>Файлы ресурсов</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\x64\Release\keys\KEY_A" />
+    <None Include="..\x64\Release\keys\KEY_B" />
   </ItemGroup>
 </Project>
