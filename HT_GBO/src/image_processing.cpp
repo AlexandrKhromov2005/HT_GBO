@@ -67,24 +67,24 @@ std::string computeMD5(const cv::Mat& block) {
 
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
     if (!ctx) {
-        std::cerr << "Ошибка создания контекста EVP_MD_CTX" << std::endl;
+        std::cerr << "Error creating context EVP_MD_CTX" << std::endl;
         return "";
     }
 
     if (1 != EVP_DigestInit_ex(ctx, EVP_md5(), nullptr)) {
-        std::cerr << "Ошибка инициализации EVP для MD5" << std::endl;
+        std::cerr << "Initialization error EVP для MD5" << std::endl;
         EVP_MD_CTX_free(ctx);
         return "";
     }
 
     if (1 != EVP_DigestUpdate(ctx, block.data, block.total())) {
-        std::cerr << "Ошибка в EVP_DigestUpdate" << std::endl;
+        std::cerr << "Error in EVP_DigestUpdate" << std::endl;
         EVP_MD_CTX_free(ctx);
         return "";
     }
 
     if (1 != EVP_DigestFinal_ex(ctx, result, &resultLen)) {
-        std::cerr << "Ошибка в EVP_DigestFinal_ex" << std::endl;
+        std::cerr << "Error in EVP_DigestFinal_ex" << std::endl;
         EVP_MD_CTX_free(ctx);
         return "";
     }
