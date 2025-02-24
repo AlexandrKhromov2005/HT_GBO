@@ -137,12 +137,14 @@
     <ClCompile Include="HT_GBO.cpp" />
     <ClCompile Include="src\affine.cpp" />
     <ClCompile Include="src\Hadamard.cpp" />
+    <ClCompile Include="src\image_processing.cpp" />
     <ClCompile Include="src\POB.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\affine.h" />
     <ClInclude Include="src\config.h" />
     <ClInclude Include="src\Hadamard.h" />
+    <ClInclude Include="src\image_processing.h" />
     <ClInclude Include="src\POB.h" />
   </ItemGroup>
   <ItemGroup>
