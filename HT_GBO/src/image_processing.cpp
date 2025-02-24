@@ -1,61 +1,66 @@
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/utils/logger.hpp>
-#include <iostream>
-#include <vector>
-#include <array>
-#include <openssl/evp.h>
-#include <sstream>
-#include <iomanip>
-#include <cmath>
+#include "image_processing.h"
 
-// Функция для обработки изображения и разбиения на блоки 4x4
-std::vector<cv::Mat> processImage(const std::string& imagePath) {
+// Image import function
+cv::Mat importImage(const std::string& imagePath) {
     cv::Mat image = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
     if (image.empty()) {
-        std::cerr << "Ошибка загрузки изображения!" << std::endl;
-        return {};
+        std::cerr << "Error loading image!" << std::endl;
     }
+    return image;
+}
 
-    std::cout << "Размер изображения: " << image.rows << "x" << image.cols << std::endl;
-
-    int blockSize = 4;
-    int rows = image.rows;
-    int cols = image.cols;
-
-    if (rows < blockSize || cols < blockSize) {
-        std::cerr << "Изображение слишком маленькое для блоков 4x4." << std::endl;
-        return {};
-    }
-
+// Function to split image into 4x4 blocks
+std::vector<cv::Mat> splitIntoBlocks(const cv::Mat& image, int blockSize) {
     std::vector<cv::Mat> blocks;
 
-    for (int row = 0; row <= rows - blockSize; row += blockSize) {
-        for (int col = 0; col <= cols - blockSize; col += blockSize) {
-            cv::Mat block = image(cv::Rect(col, row, blockSize, blockSize)).clone();
-            blocks.push_back(block);
+    if (image.rows < blockSize || image.cols < blockSize) {
+        std::cerr << "Image is too small for 4x4 blocks" << std::endl;
+        return blocks;
+    }
+
+    for (int y = 0; y <= image.rows - blockSize; y += blockSize) {
+        for (int x = 0; x <= image.cols - blockSize; x += blockSize) {
+            cv::Rect roi(x, y, blockSize, blockSize);
+            blocks.push_back(image(roi).clone());
         }
     }
 
     return blocks;
 }
 
-// Функция для восстановления изображения из блоков 4x4
-cv::Mat reconstructImage(const std::vector<cv::Mat>& blocks, int rows, int cols, int blockSize = 4) {
-    cv::Mat reconstructedImage(rows, cols, CV_8UC1);
+// Function for assembling an image from blocks
+cv::Mat assembleImage(const std::vector<cv::Mat>& blocks, int originalRows, int originalCols, int blockSize) {
+    cv::Mat result(originalRows, originalCols, CV_8UC1);
 
-    int blockIdx = 0;
-    for (int row = 0; row <= rows - blockSize; row += blockSize) {
-        for (int col = 0; col <= cols - blockSize; col += blockSize) {
-            if (blockIdx < blocks.size()) {
-                blocks[blockIdx++].copyTo(reconstructedImage(cv::Rect(col, row, blockSize, blockSize)));
+    int blockIndex = 0;
+    for (int y = 0; y <= originalRows - blockSize; y += blockSize) {
+        for (int x = 0; x <= originalCols - blockSize; x += blockSize) {
+            if (blockIndex < blocks.size()) {
+                cv::Rect roi(x, y, blockSize, blockSize);
+                blocks[blockIndex++].copyTo(result(roi));
             }
         }
     }
 
-    return reconstructedImage;
+    return result;
 }
 
-// Функция для вычисления MD5 от блока 4x4 через EVP
+// Image export function
+bool exportImage(const cv::Mat& image, const std::string& outputPath) {
+    if (image.empty()) {
+        std::cerr << "Empty image for export" << std::endl;
+        return false;
+    }
+
+    std::vector<int> compression_params = { cv::IMWRITE_JPEG_QUALITY, 95 };
+    bool success = cv::imwrite(outputPath, image, compression_params);
+
+    if (!success) {
+        std::cerr << "Failed to save image to: " << outputPath << std::endl;
+    }
+    return success;
+}
+// Function to calculate MD5 from 4x4 block via EVP
 std::string computeMD5(const cv::Mat& block) {
     unsigned char result[EVP_MAX_MD_SIZE];
     unsigned int resultLen = 0;
@@ -94,7 +99,7 @@ std::string computeMD5(const cv::Mat& block) {
     return hashString.str();
 }
 
-//Функция для вычисления координат встраивания
+//Function for calculating embedding coordinates
 std::vector<size_t> calcCoords(const std::vector<cv::Mat>& image_blocks) {
     std::string hash;
     std::vector<size_t> coords;
@@ -109,7 +114,7 @@ std::vector<size_t> calcCoords(const std::vector<cv::Mat>& image_blocks) {
     return coords;
 }
 
-//Функция для встраивания бита
+//Function for embedding a bit
 cv::Mat embendBit(cv::Mat block, double t, unsigned char w, unsigned char bit_wm) {
     if (w == 1) {
         for (int i = 0; i < 3; i++) {
@@ -134,7 +139,7 @@ cv::Mat embendBit(cv::Mat block, double t, unsigned char w, unsigned char bit_wm
     return block;
 }
 
-//Функция для извлечения бита
+//Function to extract a bit
 unsigned char extract_bit(cv::Mat& block, double t, unsigned char w, unsigned char bit_wm) {
     int temp_bit = 0;
     if (w == 1) {
