@@ -12,4 +12,7 @@
 using KEY_A = std::array<int, 6>;
 using KEY_B = std::vector<int>;
 
+cv::Mat process(cv::Mat wm);
+cv::Mat restore(cv::Mat wm);
+
 #endif // !PROCESSWM_H
