@@ -30,8 +30,8 @@ std::string computeMD5(const cv::Mat& block);
 std::vector<size_t> calcCoords(const std::vector<cv::Mat>& image_blocks);
 
 //Function for embedding a bit
-cv::Mat embendBit(cv::Mat block, double t, unsigned char w, unsigned char bit_wm);
+cv::Mat embedBit(cv::Mat block, double t, unsigned char w, unsigned char bit_wm);
 
 //Function to extract a bit
-unsigned char extract_bit(cv::Mat& block, double t, unsigned char w, unsigned char bit_wm);
+unsigned char extractBit(cv::Mat& block, double t, unsigned char w);
 

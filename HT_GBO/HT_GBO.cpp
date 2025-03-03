@@ -1,7 +1,7 @@
 ﻿#include <opencv2/opencv.hpp>
 #include "src/affine.h"
 #include "src/POB.h"
-
+#include "src/image_processing.h"
 
 int main() {
 
@@ -26,5 +26,19 @@ int main() {
    
     }
 
+    cv::Mat img = importImage("images/lenna.png");
+    std::cout << "rows = " << img.rows << " cols = " << img.cols << "\n";
+
+    cv::Mat mat = (cv::Mat_<uchar>(4, 4) <<
+        10, 20, 30, 40,
+        50, 60, 70, 80,
+        90, 100, 110, 120,
+        130, 140, 150, 160);
+    
+    std::cout << "element = " << (int)mat.at<uchar>(15) << "\n";
+
+    //img = splitIntoBlocks(img);
+
+    std::cin.get();
     return 0;
 }
