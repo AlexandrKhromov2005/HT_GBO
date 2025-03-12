@@ -27,11 +27,16 @@ bool exportImage(const cv::Mat& image, const std::string& outputPath);
 std::string computeMD5(const cv::Mat& block);
 
 //Function for calculating embedding coordinates
-std::vector<size_t> calcCoords(const std::vector<cv::Mat>& image_blocks);
+std::vector<size_t> calcCoords(const cv::Mat& hostImage);
 
 //Function for embedding a bit
-cv::Mat embedBit(cv::Mat block, double t, unsigned char w, unsigned char bit_wm);
+cv::Mat embedBit(cv::Mat block, double t, unsigned char mode, unsigned char bit_wm);
 
-//Function to extract a bit
-unsigned char extractBit(cv::Mat& block, double t, unsigned char w);
+// Extract a single bit from a block
+unsigned char extractBit(const cv::Mat& block, double t, unsigned char mode);
 
+// Embed a watermark into the image
+cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t, std::vector<size_t> coords, std::vector<int>& r_vec);
+
+// Extract a watermark from the watermarked image
+cv::Mat extractWatermark(const cv::Mat& watermarkedImage, int wm_rows, int wm_cols, double t, std::vector<size_t> coords, std::vector<int> r_vec);
