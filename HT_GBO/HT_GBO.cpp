@@ -20,25 +20,22 @@ int main() {
     //cv::imwrite("images/trans_wm.png", trans_wm);
     //cv::imwrite("images/rest_wm.png", rest_wm);
 
-    for (unsigned short i = 0; i < 16; ++i) {
-        std::pair<int, int> res = pob(i);
-        std::cout << i << " " << res.first << " " << res.second << std::endl;
-   
-    }
-
+    cv::Mat wm = cv::imread("images/watermark.png", cv::IMREAD_GRAYSCALE);
+    wm = affineTransform(wm, 2, 1, -1, 3, 5, 4);
     cv::Mat img = importImage("images/lenna.png");
-    std::cout << "rows = " << img.rows << " cols = " << img.cols << "\n";
-
-    cv::Mat mat = (cv::Mat_<uchar>(4, 4) <<
-        10, 20, 30, 40,
-        50, 60, 70, 80,
-        90, 100, 110, 120,
-        130, 140, 150, 160);
     
-    std::cout << "element = " << (int)mat.at<uchar>(15) << "\n";
+    std::vector<int> r_vec;
+    std::vector<size_t> coords = calcCoords(img);
 
-    //img = splitIntoBlocks(img);
+    cv::Mat new_img = embedWatermark(img, wm, 52.9, coords, r_vec);
+    exportImage(new_img, "images/new_lenna.png");
 
+    cv::Mat new_imp_img = importImage("images/new_lenna.png");
+    cv::Mat extractedWatermark = extractWatermark(new_imp_img, wm.rows, wm.cols, 52.9, coords, r_vec);
+    extractedWatermark = affineTransformInv(wm, 2, 1, -1, 3, 5, 4);
+    exportImage(extractedWatermark, "images/new_wm.png");
+
+    std::cout << "Done" << std::endl;
     std::cin.get();
     return 0;
 }
