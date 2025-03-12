@@ -7,9 +7,9 @@
     <ClCompile Include="src\image_processing.cpp" />
     <ClCompile Include="src\POB.cpp" />
     <ClCompile Include="src\processWM.cpp" />
-    <ClCompile Include="src\OF.cpp" />
     <ClCompile Include="src\attacks.cpp" />
     <ClCompile Include="src\metrics.cpp" />
+    <ClCompile Include="src\OF.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\affine.h" />
@@ -18,9 +18,9 @@
     <ClInclude Include="src\image_processing.h" />
     <ClInclude Include="src\POB.h" />
     <ClInclude Include="src\processWM.h" />
-    <ClInclude Include="src\OF.h" />
     <ClInclude Include="src\attacks.h" />
     <ClInclude Include="src\metrics.h" />
+    <ClInclude Include="src\OF.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\x64\Release\images\watermark.png" />
