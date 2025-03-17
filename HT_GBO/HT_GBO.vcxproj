@@ -137,23 +137,29 @@
     <ClCompile Include="HT_GBO.cpp" />
     <ClCompile Include="src\affine.cpp" />
     <ClCompile Include="src\attacks.cpp" />
+    <ClCompile Include="src\GBO.cpp" />
     <ClCompile Include="src\Hadamard.cpp" />
     <ClCompile Include="src\image_processing.cpp" />
     <ClCompile Include="src\metrics.cpp" />
     <ClCompile Include="src\OF.cpp" />
     <ClCompile Include="src\POB.cpp" />
+    <ClCompile Include="src\population.cpp" />
     <ClCompile Include="src\processWM.cpp" />
+    <ClCompile Include="src\random_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\affine.h" />
     <ClInclude Include="src\attacks.h" />
     <ClInclude Include="src\config.h" />
+    <ClInclude Include="src\GBO.h" />
     <ClInclude Include="src\Hadamard.h" />
     <ClInclude Include="src\image_processing.h" />
     <ClInclude Include="src\metrics.h" />
     <ClInclude Include="src\OF.h" />
     <ClInclude Include="src\POB.h" />
+    <ClInclude Include="src\population.h" />
     <ClInclude Include="src\processWM.h" />
+    <ClInclude Include="src\random_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\x64\Release\images\lenna.png" />
