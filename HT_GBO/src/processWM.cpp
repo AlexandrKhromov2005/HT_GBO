@@ -1,10 +1,20 @@
 #include "processWM.h"
 
+std::filesystem::path get_exe_directory() {
+    char path[MAX_PATH];
+    GetModuleFileNameA(nullptr, path, MAX_PATH);
+    return std::filesystem::path(path).parent_path();
+}
+
 KEY_A read() {
-    std::ifstream file("keys/KEY_A");
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file");
+    auto exe_dir = get_exe_directory();
+    std::filesystem::path file_path = exe_dir / "keys/KEY_A.txt";
+
+    std::ifstream file(file_path);
+    if (!file) {
+        std::cerr << "Failed to open file: " << file_path << std::endl;
     }
+    std::cout << "File opened successfully: " << file_path << std::endl;
 
     KEY_A result;
     for (int i = 0; i < 6; ++i) {
@@ -17,7 +27,7 @@ KEY_A read() {
 }
 
 void update(int n) {
-    std::ofstream file("keys/KEY_B", std::ios::app);
+    std::ofstream file("keys/KEY_B.txt", std::ios::app);
 
     if (!file.is_open()) {
         throw std::runtime_error("Cannot open file for writing");
@@ -31,25 +41,35 @@ void update(int n) {
 }
 
 KEY_B get() {
-    std::ifstream file("keys/KEY_B");
-    if (!file.is_open()) {
-        throw std::runtime_error("Failed to open file");
+    auto exe_dir = get_exe_directory();
+    std::filesystem::path file_path = exe_dir / "keys/KEY_B.txt";
+
+    std::ifstream file(file_path);
+    if (!file) {
+        std::cerr << "Failed to open file: " << file_path << std::endl;
     }
+    std::cout << "File opened successfully: " << file_path << std::endl;
 
     KEY_B result;
-
-    for (int i = 0; i < WM_SIZE * WM_SIZE; ++i) {
-        if (!(file >> result[i])) {
-            throw std::runtime_error("File contains invalid data or not enough numbers");
-        }
+    int num;
+    while (file >> num) {
+        result.push_back(num);
     }
+
+    if (file.bad()) {
+        throw std::runtime_error("Error reading file");
+    }   
+
+    return result;
 }
 
-cv::Mat process(cv::Mat wm) {
+std::vector<std::pair<int, int>> process(cv::Mat wm) {
     KEY_A key_a = read();
     cv::Mat affined_wm = affineTransform(wm, key_a[0], key_a[1], key_a[2], key_a[3], key_a[4], key_a[5]);
 
     //POB 
+    std::vector<std::pair<int, int>> result;
+
     for (int x = 0; x < affined_wm.cols; ++x) {
         for (int y = 0; y < affined_wm.rows; ++y) {
             int temp_pixel = affined_wm.at<uchar>(x, y);
@@ -60,34 +80,64 @@ cv::Mat process(cv::Mat wm) {
             low_bits = p.first;
             update(p.second);
 
-            temp_pixel = high_bits | low_bits;
+            result.push_back(p);
+            //temp_pixel = high_bits | low_bits;
 
-            affined_wm.at<uchar>(x, y) = temp_pixel;
+            //affined_wm.at<uchar>(x, y) = temp_pixel;
         }
     }
 
-    return affined_wm;
+    return result;
 }
 
-cv::Mat restore(cv::Mat wm) {
+cv::Mat restore(std::vector<std::pair<int, int>> pixels) {
     KEY_B key_b = get();
     KEY_A key_a = read();
     int cnt = 0;
-    cv::Mat restored_wm = cv::Mat::zeros(wm.rows, wm.cols,  CV_8UC1);
+    cv::Mat restored_wm = cv::Mat::zeros(WM_SIZE, WM_SIZE, CV_8UC1);
 
-    for (int x = 0; x < wm.cols; ++x) {
-        for (int y = 0; y < wm.rows; ++y) {
-            int temp_pixel = wm.at<uchar>(x, y);
-            int high_bits = temp_pixel & 0b11110000;
-            int low_bits = temp_pixel & 0b00001111;
+
+    for (int x = 0; x < WM_SIZE; ++x) {
+        for (int y = 0; y < WM_SIZE; ++y) {
+            int high_bits = pixels[cnt].first;
+            int low_bits = pixels[cnt].second;
 
             low_bits = inverse_pob(low_bits, key_b[cnt]);
             ++cnt;
 
-            temp_pixel = high_bits | low_bits;
+            int temp_pixel = high_bits | low_bits;
             restored_wm.at<uchar>(x, y) = temp_pixel;
         }
     }
 
+    restored_wm = affineTransformInv(restored_wm, key_a[0], key_a[1], key_a[2], key_a[3], key_a[4], key_a[5]);
+
     return restored_wm;
+}
+
+bool writeVectorToFile(const std::vector<int>& keys) {
+    std::string file_name_key_a = "keys/KEY_A.txt";
+    std::string file_name_key_b = "keys/KEY_B.txt";
+
+    std::ofstream outFile_key_a(file_name_key_a);
+    std::ofstream outFile_key_b(file_name_key_b);
+    outFile_key_b.close();
+
+    if (!outFile_key_a.is_open()) {
+        return false; // Ошибка открытия файла
+    }
+
+    // Записываем элементы через пробел
+    if (!keys.empty()) {
+        outFile_key_a << keys[0]; // Первый элемент без пробела
+        for (size_t i = 1; i < keys.size(); ++i) {
+            outFile_key_a << " " << keys[i]; // Остальные элементы с пробелом
+        }
+    }
+
+    // Проверяем флаги ошибок
+    const bool success = !outFile_key_a.fail();
+    outFile_key_a.close();
+
+    return success;
 }

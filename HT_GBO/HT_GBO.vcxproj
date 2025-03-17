@@ -156,11 +156,12 @@
     <ClInclude Include="src\processWM.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\x64\Release\images\lenna.png" />
     <Image Include="..\x64\Release\images\watermark.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\x64\Release\keys\KEY_A" />
-    <None Include="..\x64\Release\keys\KEY_B" />
+    <None Include="..\x64\Release\keys\KEY_A.txt" />
+    <None Include="..\x64\Release\keys\KEY_B.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

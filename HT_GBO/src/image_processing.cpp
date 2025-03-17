@@ -56,46 +56,58 @@ bool exportImage(const cv::Mat& image, const std::string& outputPath) {
     return success;
 }
 
-// Function to compute MD5 hash for a block (used for pseudorandom block selection)
-std::string computeMD5(const cv::Mat& block) {
+std::string computeMD5(const std::pair<int, int>& pair) {
     unsigned char result[EVP_MAX_MD_SIZE];
     unsigned int resultLen = 0;
+
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
     if (!ctx) {
         std::cerr << "Error creating EVP_MD_CTX" << std::endl;
         return "";
     }
+
     if (1 != EVP_DigestInit_ex(ctx, EVP_md5(), nullptr)) {
         std::cerr << "EVP_DigestInit_ex error" << std::endl;
         EVP_MD_CTX_free(ctx);
         return "";
     }
-    // Use block.total() * elemSize() bytes of data
-    if (1 != EVP_DigestUpdate(ctx, block.data, block.total() * block.elemSize())) {
+
+    if (1 != EVP_DigestUpdate(ctx, &pair, sizeof(pair))) {
         std::cerr << "EVP_DigestUpdate error" << std::endl;
         EVP_MD_CTX_free(ctx);
         return "";
     }
+
     if (1 != EVP_DigestFinal_ex(ctx, result, &resultLen)) {
         std::cerr << "EVP_DigestFinal_ex error" << std::endl;
         EVP_MD_CTX_free(ctx);
         return "";
     }
+
     EVP_MD_CTX_free(ctx);
+
     std::ostringstream hashString;
     for (unsigned int i = 0; i < resultLen; ++i) {
-        hashString << std::hex << std::setw(2) << std::setfill('0') << (int)result[i];
+        hashString << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(result[i]);
     }
+
     return hashString.str();
 }
 
 // Function to compute embedding coordinates (simplified: taking all block indices here)
-std::vector<size_t> calcCoords(const cv::Mat& hostImage) {
+std::vector<size_t> calcCoords(const cv::Mat& hostImage, KEY_B key_b) {
     int blockSize = 4;
     std::vector<cv::Mat> image_blocks = splitIntoBlocks(hostImage, blockSize);
     std::vector<size_t> coords;
+    std::cout << "blocks num = " << image_blocks.size() << "\n";
+    std::cout << "r num = " << key_b.size() << "\n";
     for (size_t i = 0; i < image_blocks.size(); i++) {
-        coords.push_back(i);
+        std::pair<int, int> block_data = {i, key_b[i / 16]};
+        std::string hash = computeMD5(block_data);
+        
+        if (hash[0] != 'a'){
+            coords.push_back(i);
+        }
     }
     return coords;
 }
@@ -167,19 +179,24 @@ unsigned char extractBit(const cv::Mat& block, double t, unsigned char mode) {
 }
 
 // Function to embed watermark into host image
-cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t, std::vector<size_t> coords, std::vector<int>& r_vec) {
+cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t) {
+    std::vector<std::pair<int, int>> encrypted_wm = process(wm);
+    KEY_B key_b = get();
+
     int blockSize = 4;
     // Required number of blocks = watermark pixels * 15 (12 for upper bits + 3 for lower bits after POB)
     size_t requiredBlocks = wm.rows * wm.cols * 15;
     std::vector<cv::Mat> blocks = splitIntoBlocks(hostImage, blockSize);
+
+    std::vector<size_t> coords = calcCoords(hostImage, key_b);
     if (coords.size() < requiredBlocks) {
         std::cerr << "Not enough blocks available for embedding watermark!" << std::endl;
         return cv::Mat();
     }
     for (int i = 0; i < wm.rows * wm.cols; i++) {
         unsigned char wm_pixel = wm.at<uchar>(i);
-        unsigned char upper_bits = (wm_pixel >> 4) & 0x0F; // Upper 4 bits
-        unsigned char lower_bits = wm_pixel & 0x0F;        // Lower 4 bits
+        unsigned char upper_bits = encrypted_wm[i].first; // Upper 4 bits
+        unsigned char lower_bits = encrypted_wm[i].second;        // Lower 4 bits
 
         // Embed upper 4 bits: each bit embedded into 3 blocks (for robustness - voting)
         for (int j = 0; j < 4; j++) {
@@ -192,7 +209,6 @@ cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t, st
 
         // Compress lower 4 bits using POB (pob() function implemented in POB.h)
         std::pair<int, int> pob_lower = pob(lower_bits);
-        r_vec.push_back(pob_lower.second);
         // Embed compressed lower bits (assumed 3-bit representation) into 3 blocks
         for (int j = 0; j < 3; j++) {
             size_t block_index = coords[i * 15 + 12 + j];
@@ -204,16 +220,22 @@ cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t, st
 }
 
 // Function to extract watermark from watermarked image
-cv::Mat extractWatermark(const cv::Mat& watermarkedImage, int wm_rows, int wm_cols, double t, std::vector<size_t> coords, std::vector<int> r_vec) {
+cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t) {
+    KEY_B key_b = get();
+
     int blockSize = 4;
-    size_t requiredBlocks = wm_rows * wm_cols * 15;
+    size_t requiredBlocks = WM_SIZE * WM_SIZE * 15;
     std::vector<cv::Mat> blocks = splitIntoBlocks(watermarkedImage, blockSize);
+
+    std::vector<size_t> coords = calcCoords(watermarkedImage, key_b);
     if (coords.size() < requiredBlocks) {
         std::cerr << "Not enough blocks available for extracting watermark!" << std::endl;
         return cv::Mat();
     }
-    cv::Mat extractedWM(wm_rows, wm_cols, CV_8UC1);
-    for (int i = 0; i < wm_rows * wm_cols; i++) {
+    cv::Mat extractedWM(WM_SIZE, WM_SIZE, CV_8UC1);
+
+    std::vector<std::pair<int, int>> pixels;
+    for (int i = 0; i < WM_SIZE * WM_SIZE; i++) {
         unsigned char upper_bits = 0;
         unsigned char lower_compressed = 0;
         // Extract upper 4 bits from 12 blocks (3 blocks per bit) with voting
@@ -233,9 +255,14 @@ cv::Mat extractWatermark(const cv::Mat& watermarkedImage, int wm_rows, int wm_co
             unsigned char bit = extractBit(blocks[block_index], t, 2);
             lower_compressed |= (bit << j);
         }
-        // Recover lower 4 bits using inverse POB transformation
-        unsigned char lower_bits = static_cast<unsigned char>(inverse_pob(lower_compressed, r_vec[i]) & 0x0F);
-        extractedWM.at<uchar>(i) = (upper_bits << 4) | lower_bits;
+
+        std::pair<int, int> pixel;
+        pixel.first = upper_bits;
+        pixel.second = lower_compressed;
+
+        pixels.push_back(pixel);
     }
+    extractedWM = restore(pixels);
+
     return extractedWM;
 }

@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <cmath>
 #include <openssl/evp.h>
-
+#include "processWM.h"
 #include <opencv2/opencv.hpp>
 #include <vector>
 
@@ -23,12 +23,6 @@ cv::Mat assembleImage(const std::vector<cv::Mat>& blocks, int originalRows, int 
 // Image export function
 bool exportImage(const cv::Mat& image, const std::string& outputPath);
 
-// Function to calculate MD5 from 4x4 block via EVP
-std::string computeMD5(const cv::Mat& block);
-
-//Function for calculating embedding coordinates
-std::vector<size_t> calcCoords(const cv::Mat& hostImage);
-
 //Function for embedding a bit
 cv::Mat embedBit(cv::Mat block, double t, unsigned char mode, unsigned char bit_wm);
 
@@ -36,7 +30,7 @@ cv::Mat embedBit(cv::Mat block, double t, unsigned char mode, unsigned char bit_
 unsigned char extractBit(const cv::Mat& block, double t, unsigned char mode);
 
 // Embed a watermark into the image
-cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t, std::vector<size_t> coords, std::vector<int>& r_vec);
+cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t);
 
 // Extract a watermark from the watermarked image
-cv::Mat extractWatermark(const cv::Mat& watermarkedImage, int wm_rows, int wm_cols, double t, std::vector<size_t> coords, std::vector<int> r_vec);
+cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t);

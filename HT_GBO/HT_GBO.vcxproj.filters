@@ -24,9 +24,10 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\x64\Release\images\watermark.png" />
+    <Image Include="..\x64\Release\images\lenna.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\x64\Release\keys\KEY_A" />
-    <None Include="..\x64\Release\keys\KEY_B" />
+    <None Include="..\x64\Release\keys\KEY_A.txt" />
+    <None Include="..\x64\Release\keys\KEY_B.txt" />
   </ItemGroup>
 </Project>
