@@ -50,7 +50,7 @@ std::vector<WeightAttackPair> createAttacks(const cv::Mat& targetImage) {
 }
 
 
-inline double objectiveFunction(const std::vector<cv::Mat&> originalImages, std::vector<cv::Mat&> watermarkedImages, const std::vector<cv::Mat&> originalWMs, const std::vector<cv::Mat&> extractedWMs) {
+double objectiveFunction(std::vector<cv::Mat> originalImages, std::vector<cv::Mat> watermarkedImages, std::vector<cv::Mat> originalWMs, std::vector<cv::Mat> extractedWMs) {
     double result = 0.0;
     int n = originalImages.size();
     int m = 7 * 3;
