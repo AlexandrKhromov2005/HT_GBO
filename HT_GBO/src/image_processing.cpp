@@ -305,7 +305,7 @@ cv::Mat extractWatermarkLayer(const cv::Mat& watermarkedImage, double t, unsigne
 
 
 // Function to embed watermark into host image
-cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t, std::vector<unsigned char>& check_pixels) {
+cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t) {
     std::vector<cv::Mat> img_channels;
     cv::split(hostImage, img_channels);
 
@@ -323,7 +323,7 @@ cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t, st
 }
 
 // Function to extract watermark from watermarked image
-cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t, std::vector<unsigned char>& check_pixels) {
+cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t) {
     std::vector<cv::Mat> img_channels;
     cv::split(watermarkedImage, img_channels);
 
