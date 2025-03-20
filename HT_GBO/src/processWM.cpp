@@ -1,4 +1,5 @@
 #include "processWM.h"
+#include <bitset>
 
 std::filesystem::path get_exe_directory() {
     char path[MAX_PATH];
@@ -80,32 +81,30 @@ std::vector<std::pair<int, int>> process(cv::Mat wm) {
             low_bits = p.first;
             update(p.second);
 
-            result.push_back(p);
-            //temp_pixel = high_bits | low_bits;
-
-            //affined_wm.at<uchar>(x, y) = temp_pixel;
+            std::pair<int, int> bits_pair = { high_bits, low_bits };
+            result.push_back(bits_pair);
         }
     }
 
     return result;
 }
 
-cv::Mat restore(std::vector<std::pair<int, int>> pixels) {
+cv::Mat restore(std::vector<std::pair<int, int>> pixels, unsigned char layer) {
     KEY_B key_b = get();
     KEY_A key_a = read();
     int cnt = 0;
     cv::Mat restored_wm = cv::Mat::zeros(WM_SIZE, WM_SIZE, CV_8UC1);
 
-
     for (int x = 0; x < WM_SIZE; ++x) {
         for (int y = 0; y < WM_SIZE; ++y) {
-            int high_bits = pixels[cnt].first;
-            int low_bits = pixels[cnt].second;
+            unsigned char high_bits = pixels[cnt].first;
+            unsigned char low_bits_comp = pixels[cnt].second;
 
-            low_bits = inverse_pob(low_bits, key_b[cnt]);
+            unsigned char low_bits = inverse_pob(low_bits_comp, key_b[layer * 1024 + cnt]);
             ++cnt;
 
-            int temp_pixel = high_bits | low_bits;
+            unsigned char temp_pixel = high_bits | low_bits;
+
             restored_wm.at<uchar>(x, y) = temp_pixel;
         }
     }

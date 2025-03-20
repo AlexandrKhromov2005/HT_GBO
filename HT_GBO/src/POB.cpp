@@ -47,10 +47,10 @@ std::vector<int> generate_numbers(int target_ones) {
     return result;
 }
 
-int inverse_pob(int target_pob, int r) {
+unsigned char inverse_pob(int target_pob, int r) {
     auto trials = generate_numbers(r);
     for (int trial : trials) {
         if (pob(trial).first == target_pob) return trial;
     }
-    return 0xFFFF; 
+    return 0xF; 
 }

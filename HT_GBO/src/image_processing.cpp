@@ -1,15 +1,57 @@
 #include "image_processing.h"
 #include "Hadamard.h"
-#include "POB.h"
 
-// Function to import image (grayscale)
-cv::Mat importImage(const std::string& imagePath) {
-    cv::Mat image = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
+// Function to export image (safe version without compression parameter)
+bool exportImage(const cv::Mat& image, const std::string& outputPath) {
     if (image.empty()) {
-        std::cerr << "Error loading image: " << imagePath << std::endl;
+        throw std::invalid_argument("Cannot export empty image");
     }
-    return image;
+
+    cv::Mat outputImage;
+    try {
+        // Конвертируем цветовое пространство из RGB в BGR
+        cv::cvtColor(image, outputImage, cv::COLOR_RGB2BGR);
+    }
+    catch (const cv::Exception& e) {
+        throw std::runtime_error("Color conversion failed: " + std::string(e.what()));
+    }
+
+    // Параметры сохранения PNG без сжатия (0 – отсутствие сжатия)
+    std::vector<int> compression_params = { cv::IMWRITE_PNG_COMPRESSION, 0 };
+
+    try {
+        if (!cv::imwrite(outputPath, outputImage, compression_params)) {
+            throw std::runtime_error("Failed to write image data to filesystem");
+        }
+    }
+    catch (const cv::Exception& e) {
+        throw std::runtime_error("Image write operation failed: " + std::string(e.what()));
+    }
+
+    return true;
 }
+
+// Function to import image (safe version)
+cv::Mat importImage(const std::string& imagePath) {
+    cv::Mat image = cv::imread(imagePath, cv::IMREAD_COLOR);
+
+    if (image.empty()) {
+        throw std::runtime_error("Failed to load image: " + imagePath +
+            " (check file existence and permissions)");
+    }
+
+    try {
+        cv::Mat convertedImage;
+        // Конвертируем цветовое пространство из BGR в RGB
+        cv::cvtColor(image, convertedImage, cv::COLOR_BGR2RGB);
+        return convertedImage;
+    }
+    catch (const cv::Exception& e) {
+        throw std::runtime_error("Color space conversion failed: " + std::string(e.what()));
+    }
+}
+
+
 
 // Function to split image into blockSize x blockSize blocks
 std::vector<cv::Mat> splitIntoBlocks(const cv::Mat& image, int blockSize) {
@@ -40,20 +82,6 @@ cv::Mat assembleImage(const std::vector<cv::Mat>& blocks, int originalRows, int 
         }
     }
     return result;
-}
-
-// Function to export image
-bool exportImage(const cv::Mat& image, const std::string& outputPath) {
-    if (image.empty()) {
-        std::cerr << "Empty image for export" << std::endl;
-        return false;
-    }
-    std::vector<int> compression_params = { cv::IMWRITE_PNG_COMPRESSION, 9 };
-    bool success = cv::imwrite(outputPath, image, compression_params);
-    if (!success) {
-        std::cerr << "Failed to save image to: " << outputPath << std::endl;
-    }
-    return success;
 }
 
 std::string computeMD5(const std::pair<int, int>& pair) {
@@ -95,12 +123,10 @@ std::string computeMD5(const std::pair<int, int>& pair) {
 }
 
 // Function to compute embedding coordinates (simplified: taking all block indices here)
-std::vector<size_t> calcCoords(const cv::Mat& hostImage, KEY_B key_b) {
+std::vector<size_t> calcCoords(const cv::Mat& hostImage, KEY_B& key_b) {
     int blockSize = 4;
     std::vector<cv::Mat> image_blocks = splitIntoBlocks(hostImage, blockSize);
     std::vector<size_t> coords;
-    std::cout << "blocks num = " << image_blocks.size() << "\n";
-    std::cout << "r num = " << key_b.size() << "\n";
     for (size_t i = 0; i < image_blocks.size(); i++) {
         std::pair<int, int> block_data = {i, key_b[i / 16]};
         std::string hash = computeMD5(block_data);
@@ -112,6 +138,16 @@ std::vector<size_t> calcCoords(const cv::Mat& hostImage, KEY_B key_b) {
     return coords;
 }
 
+void print_block(cv::Mat block) {
+    std::cout << "\n";
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            std::cout << block.at<double>(i, j) << " ";
+        }
+        std::cout << "\n";
+    }
+}
+
 // Function to embed one bit into block using frequency domain quantization
 cv::Mat embedBit(cv::Mat block, double t, unsigned char mode, unsigned char bit_wm) {
     // Convert block to double format for precise calculations
@@ -120,6 +156,8 @@ cv::Mat embedBit(cv::Mat block, double t, unsigned char mode, unsigned char bit_
     Hadamard hadamardUtil;
     // Forward Hadamard transform (convert to frequency domain)
     hadamardUtil.applyHadamard(block_d);
+
+    //print_block(block_d);
 
     if (mode == 1) {
         // Mode 1: embed bit into first 3 coefficients of the first row
@@ -167,8 +205,10 @@ unsigned char extractBit(const cv::Mat& block, double t, unsigned char mode) {
             double value = block_d.at<double>(0, i);
             int quant = static_cast<int>(std::trunc(value / t));
             unsigned char bit = quant % 2;
+            //std::cout << "extacted bit = " << (int)bit << "\n";
             sum += bit;
         }
+        //std::cout << "\n";
         return (sum >= 2) ? 1 : 0;
     }
     else { // mode == 2
@@ -179,7 +219,7 @@ unsigned char extractBit(const cv::Mat& block, double t, unsigned char mode) {
 }
 
 // Function to embed watermark into host image
-cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t) {
+cv::Mat embedWatermarkLayer(const cv::Mat& hostImage, const cv::Mat& wm, double t, unsigned char layer) {
     std::vector<std::pair<int, int>> encrypted_wm = process(wm);
     KEY_B key_b = get();
 
@@ -193,26 +233,24 @@ cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t) {
         std::cerr << "Not enough blocks available for embedding watermark!" << std::endl;
         return cv::Mat();
     }
-    for (int i = 0; i < wm.rows * wm.cols; i++) {
+    for (int i = 0; i < WM_SIZE * WM_SIZE; i++) {
         unsigned char wm_pixel = wm.at<uchar>(i);
         unsigned char upper_bits = encrypted_wm[i].first; // Upper 4 bits
         unsigned char lower_bits = encrypted_wm[i].second;        // Lower 4 bits
 
         // Embed upper 4 bits: each bit embedded into 3 blocks (for robustness - voting)
         for (int j = 0; j < 4; j++) {
-            unsigned char bit = (upper_bits >> j) & 1;
+            unsigned char bit = (upper_bits >> j + 4) & 1;
+            //std::cout << "up bit for embed = " << (int)bit << "\n";
             for (int k = 0; k < 3; k++) {
                 size_t block_index = coords[i * 15 + j * 3 + k];
                 blocks[block_index] = embedBit(blocks[block_index], t, 1, bit);
             }
         }
 
-        // Compress lower 4 bits using POB (pob() function implemented in POB.h)
-        std::pair<int, int> pob_lower = pob(lower_bits);
-        // Embed compressed lower bits (assumed 3-bit representation) into 3 blocks
         for (int j = 0; j < 3; j++) {
             size_t block_index = coords[i * 15 + 12 + j];
-            unsigned char bit = (pob_lower.first >> j) & 1;
+            unsigned char bit = (lower_bits >> j) & 1;
             blocks[block_index] = embedBit(blocks[block_index], t, 2, bit);
         }
     }
@@ -220,7 +258,7 @@ cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t) {
 }
 
 // Function to extract watermark from watermarked image
-cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t) {
+cv::Mat extractWatermarkLayer(const cv::Mat& watermarkedImage, double t, unsigned char layer) {
     KEY_B key_b = get();
 
     int blockSize = 4;
@@ -247,7 +285,8 @@ cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t) {
                 sum += bit;
             }
             unsigned char bit_extracted = (sum >= 2) ? 1 : 0;
-            upper_bits |= (bit_extracted << j);
+            //std::cout << "ext up bit = " << (int)bit_extracted << "\n";
+            upper_bits |= (bit_extracted << j + 4);
         }
         // Extract compressed lower bits from 3 blocks
         for (int j = 0; j < 3; j++) {
@@ -256,13 +295,47 @@ cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t) {
             lower_compressed |= (bit << j);
         }
 
-        std::pair<int, int> pixel;
-        pixel.first = upper_bits;
-        pixel.second = lower_compressed;
-
+        std::pair<int, int> pixel = { upper_bits, lower_compressed };
         pixels.push_back(pixel);
     }
-    extractedWM = restore(pixels);
+    extractedWM = restore(pixels, layer);
 
     return extractedWM;
+}
+
+
+// Function to embed watermark into host image
+cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t, std::vector<unsigned char>& check_pixels) {
+    std::vector<cv::Mat> img_channels;
+    cv::split(hostImage, img_channels);
+
+    std::vector<cv::Mat> wm_channels;
+    cv::split(wm, wm_channels);
+
+    img_channels[0] = embedWatermarkLayer(img_channels[0], wm_channels[0], t, 0);
+    img_channels[1] = embedWatermarkLayer(img_channels[1], wm_channels[1], t, 1);
+    img_channels[2] = embedWatermarkLayer(img_channels[2], wm_channels[2], t, 2);
+
+    cv::Mat newImage = cv::Mat::zeros(IMG_SIZE, IMG_SIZE, CV_8UC3);
+    cv::merge(img_channels, newImage);
+
+    return newImage;
+}
+
+// Function to extract watermark from watermarked image
+cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t, std::vector<unsigned char>& check_pixels) {
+    std::vector<cv::Mat> img_channels;
+    cv::split(watermarkedImage, img_channels);
+
+    cv::Mat wm = cv::Mat::zeros(WM_SIZE, WM_SIZE, CV_8UC3);
+    std::vector<cv::Mat> wm_channels;
+    cv::split(wm, wm_channels);
+
+    wm_channels[0] = extractWatermarkLayer(img_channels[0], t, 0);
+    wm_channels[1] = extractWatermarkLayer(img_channels[1], t, 1);
+    wm_channels[2] = extractWatermarkLayer(img_channels[2], t, 2);
+
+    cv::merge(wm_channels, wm);
+
+    return wm;
 }

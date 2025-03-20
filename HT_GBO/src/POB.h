@@ -5,6 +5,6 @@
 #include <utility>
 
 std::pair<int, int> pob(int val);
-int inverse_pob(int target_pob, int r);
+unsigned char inverse_pob(int target_pob, int r);
 
 #endif // POB_H

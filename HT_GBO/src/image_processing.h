@@ -30,7 +30,7 @@ cv::Mat embedBit(cv::Mat block, double t, unsigned char mode, unsigned char bit_
 unsigned char extractBit(const cv::Mat& block, double t, unsigned char mode);
 
 // Embed a watermark into the image
-cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t);
+cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t, std::vector<unsigned char>& check_pixels);
 
 // Extract a watermark from the watermarked image
-cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t);
+cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t, std::vector<unsigned char>& check_pixels);

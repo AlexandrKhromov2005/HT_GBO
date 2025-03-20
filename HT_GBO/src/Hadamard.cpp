@@ -2,39 +2,37 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 
-
 void Hadamard::applyHadamard(cv::Mat& block) {
     cv::Mat block_d;
-    block.convertTo(block_d, CV_64F); 
+    block.convertTo(block_d, CV_64F); // Конвертация в double
 
+    // Матрица Адамара 4x4 (H4) из 1 и -1 (без нормировки)
     cv::Mat H4 = (cv::Mat_<double>(4, 4) <<
         1, 1, 1, 1,
         1, -1, 1, -1,
         1, 1, -1, -1,
-        1, -1, -1, 1) / 2.0;
+        1, -1, -1, 1);
 
-    cv::Mat transformed = H4 * block_d * H4.t();
+    // Одностороннее умножение: H4 * block (согласно уравнению 2)
+    cv::Mat transformed = H4 * block_d;
 
-    block = transformed.clone(); 
+    block = transformed.clone();
 }
 
 void Hadamard::applyInverseHadamard(cv::Mat& block) {
     cv::Mat block_d;
-    block.convertTo(block_d, CV_64F); 
+    block.convertTo(block_d, CV_64F);
 
+    // Матрица H4 та же (H4 = H4^T для симметричной матрицы)
     cv::Mat H4 = (cv::Mat_<double>(4, 4) <<
         1, 1, 1, 1,
         1, -1, 1, -1,
         1, 1, -1, -1,
-        1, -1, -1, 1) / 2.0;
+        1, -1, -1, 1);
 
-    cv::Mat transformed = H4 * block_d * H4.t();
+    // Обратное преобразование: (H4 * transformed) / 4 (согласно уравнению 4)
+    cv::Mat transformed = (H4 * block_d) / 4.0;
 
-    
-    block = transformed.clone();
-    block.forEach<double>([](double& pixel, const int* position) {
-        pixel = cv::saturate_cast<uchar>(std::round(pixel));
-        });
+    // Корректное приведение к uchar с округлением
+    transformed.convertTo(block, CV_8UC1);
 }
-
-
