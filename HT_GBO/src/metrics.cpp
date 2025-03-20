@@ -75,15 +75,47 @@ double computeSSIM(const cv::Mat& I1, const cv::Mat& I2)
 
 double computeNC(const cv::Mat& watermarkOriginal, const cv::Mat& watermarkExtracted)
 {
-    cv::Mat origFloat, extFloat;
-    watermarkOriginal.convertTo(origFloat, CV_32F);
-    watermarkExtracted.convertTo(extFloat, CV_32F);
+    CV_Assert(watermarkOriginal.size() == watermarkExtracted.size());
+    CV_Assert(watermarkOriginal.type() == watermarkExtracted.type());
 
-    double dotProduct = origFloat.dot(extFloat);
-    double normOrig = cv::norm(origFloat);
-    double normExt = cv::norm(extFloat);
+    double dotProduct = 0.0;
+    double normOrig = 0.0;
+    double normExt = 0.0;
+
+    if (watermarkOriginal.channels() == 1)
+    {
+        cv::Mat origFloat, extFloat;
+        watermarkOriginal.convertTo(origFloat, CV_32F);
+        watermarkExtracted.convertTo(extFloat, CV_32F);
+
+        dotProduct = origFloat.dot(extFloat);
+        normOrig = cv::norm(origFloat);
+        normExt = cv::norm(extFloat);
+    }
+    else if (watermarkOriginal.channels() == 3)
+    {
+        std::vector<cv::Mat> origChannels, extChannels;
+        cv::split(watermarkOriginal, origChannels);
+        cv::split(watermarkExtracted, extChannels);
+
+        for (int i = 0; i < 3; i++)
+        {
+            cv::Mat origChanFloat, extChanFloat;
+            origChannels[i].convertTo(origChanFloat, CV_32F);
+            extChannels[i].convertTo(extChanFloat, CV_32F);
+
+            dotProduct += origChanFloat.dot(extChanFloat);
+            normOrig += cv::norm(origChanFloat) * cv::norm(origChanFloat);
+            normExt += cv::norm(extChanFloat) * cv::norm(extChanFloat);
+        }
+
+        normOrig = sqrt(normOrig);
+        normExt = sqrt(normExt);
+    }
+
     if (normOrig == 0 || normExt == 0)
         return 0;
+
     double nc = dotProduct / (normOrig * normExt);
     return nc;
 }
