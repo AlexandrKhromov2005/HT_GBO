@@ -30,16 +30,20 @@ namespace {
         std::default_random_engine generator;
         std::uniform_int_distribution<int> rowDist(0, image.rows - 1);
         std::uniform_int_distribution<int> colDist(0, image.cols - 1);
+
         for (int i = 0; i < nNoisePixels; ++i) {
             int r = rowDist(generator);
             int c = colDist(generator);
-            if (image.channels() == 1) {
+
+            if (image.channels() == 1) { // Серое изображение
                 noisy.at<uchar>(r, c) = (rand() % 2) ? 255 : 0;
             }
-            else {
-                for (int ch = 0; ch < image.channels(); ch++) {
-                    noisy.at<cv::Vec3b>(r, c)[ch] = (rand() % 2) ? 255 : 0;
-                }
+            else { // RGB изображение
+                cv::Vec3b& pixel = noisy.at<cv::Vec3b>(r, c);
+                bool white = (rand() % 2);
+                pixel[0] = white ? 255 : 0; // Blue
+                pixel[1] = white ? 255 : 0; // Green
+                pixel[2] = white ? 255 : 0; // Red
             }
         }
         return noisy;
