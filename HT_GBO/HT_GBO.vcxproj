@@ -139,6 +139,7 @@
     <ClCompile Include="src\attacks.cpp" />
     <ClCompile Include="src\GBO.cpp" />
     <ClCompile Include="src\Hadamard.cpp" />
+    <ClCompile Include="src\image_metrics.cpp" />
     <ClCompile Include="src\image_processing.cpp" />
     <ClCompile Include="src\metrics.cpp" />
     <ClCompile Include="src\OF.cpp" />
@@ -148,6 +149,7 @@
     <ClCompile Include="src\random_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="image_metrics.h" />
     <ClInclude Include="src\affine.h" />
     <ClInclude Include="src\attacks.h" />
     <ClInclude Include="src\config.h" />

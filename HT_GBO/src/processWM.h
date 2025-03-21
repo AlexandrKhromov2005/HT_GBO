@@ -22,5 +22,6 @@ KEY_B get();
 void update(int n);
 KEY_A read();
 bool writeVectorToFile(const std::vector<int>& keys);
+std::filesystem::path get_exe_directory();
 
 #endif // !PROCESSWM_H

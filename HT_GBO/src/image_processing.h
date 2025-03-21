@@ -10,15 +10,18 @@
 #include "processWM.h"
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <windows.h>
+#include <filesystem>
+#include <utility>
 
 // Image import function
 cv::Mat importImage(const std::string& imagePath);
 
 // Function to split image into 4x4 blocks
-std::vector<cv::Mat> splitIntoBlocks(const cv::Mat& image, int blockSize = 4);
+std::vector<cv::Mat> splitIntoBlocks(const cv::Mat& image);
 
 // Function for assembling an image from blocks
-cv::Mat assembleImage(const std::vector<cv::Mat>& blocks, int originalRows, int originalCols, int blockSize = 4);
+cv::Mat assembleImage(const std::vector<cv::Mat>& blocks, int originalRows, int originalCols);
 
 // Image export function
 bool exportImage(const cv::Mat& image, const std::string& outputPath);

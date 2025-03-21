@@ -20,7 +20,7 @@ double Population::calculateOf(const cv::Mat& hostImage, const cv::Mat& wm, doub
     std::vector<cv::Mat> origWMs = { wm };
     std::vector<cv::Mat> exWMs = { extractedWM };
 
-    return objectiveFunction(origImgs, wmImgs, origWMs, exWMs);
+    return objectiveFunction(origImgs, wmImgs, origWMs, exWMs, t);
 }
 
 void Population::initOf(const cv::Mat& hostImage, const cv::Mat& wm) {

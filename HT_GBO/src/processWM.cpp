@@ -13,9 +13,9 @@ KEY_A read() {
 
     std::ifstream file(file_path);
     if (!file) {
-        std::cerr << "Failed to open file: " << file_path << std::endl;
+        //std::cerr << "Failed to open file: " << file_path << std::endl;
     }
-    std::cout << "File opened successfully: " << file_path << std::endl;
+    //std::cout << "File opened successfully: " << file_path << std::endl;
 
     KEY_A result;
     for (int i = 0; i < 6; ++i) {
@@ -47,9 +47,9 @@ KEY_B get() {
 
     std::ifstream file(file_path);
     if (!file) {
-        std::cerr << "Failed to open file: " << file_path << std::endl;
+        //std::cerr << "Failed to open file: " << file_path << std::endl;
     }
-    std::cout << "File opened successfully: " << file_path << std::endl;
+    //std::cout << "File opened successfully: " << file_path << std::endl;
 
     KEY_B result;
     int num;

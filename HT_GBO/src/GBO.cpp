@@ -39,6 +39,7 @@ void GBO::optimize() {
     population.initOf(hostImage, wm);
 
     for (size_t m = 0; m < ITERATIONS; ++m) {
+        std::cout << "cur iter: " << m << "\n";
         double beta = 0.2 + (1.2 - 0.2) * pow(1.0 - static_cast<double>(m + 1) / ITERATIONS, 2.0);
         double angle = 1.5 * M_PI;
         double alpha = fabs(beta * sin(angle + sin(angle * beta)));

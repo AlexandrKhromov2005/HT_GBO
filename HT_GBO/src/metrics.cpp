@@ -75,6 +75,9 @@ double computeSSIM(const cv::Mat& I1, const cv::Mat& I2)
 
 double computeNC(const cv::Mat& watermarkOriginal, const cv::Mat& watermarkExtracted)
 {
+    /*std::cout << "Original size: " << watermarkOriginal.size() << std::endl;
+    std::cout << "Extracted size: " << watermarkExtracted.size() << std::endl;*/
+
     CV_Assert(watermarkOriginal.size() == watermarkExtracted.size());
     CV_Assert(watermarkOriginal.type() == watermarkExtracted.type());
 

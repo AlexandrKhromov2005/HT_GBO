@@ -54,7 +54,9 @@ cv::Mat importImage(const std::string& imagePath) {
 
 
 // Function to split image into blockSize x blockSize blocks
-std::vector<cv::Mat> splitIntoBlocks(const cv::Mat& image, int blockSize) {
+std::vector<cv::Mat> splitIntoBlocks(const cv::Mat& image) {
+    int blockSize = 4;
+
     std::vector<cv::Mat> blocks;
     if (image.rows < blockSize || image.cols < blockSize) {
         std::cerr << "Image is too small for " << blockSize << "x" << blockSize << " blocks" << std::endl;
@@ -70,7 +72,9 @@ std::vector<cv::Mat> splitIntoBlocks(const cv::Mat& image, int blockSize) {
 }
 
 // Function to assemble image from blocks
-cv::Mat assembleImage(const std::vector<cv::Mat>& blocks, int originalRows, int originalCols, int blockSize) {
+cv::Mat assembleImage(const std::vector<cv::Mat>& blocks, int originalRows, int originalCols) {
+    int blockSize = 4;
+
     cv::Mat result(originalRows, originalCols, CV_8UC1);
     int blockIndex = 0;
     for (int y = 0; y <= originalRows - blockSize; y += blockSize) {
@@ -125,7 +129,7 @@ std::string computeMD5(const std::pair<int, int>& pair) {
 // Function to compute embedding coordinates (simplified: taking all block indices here)
 std::vector<size_t> calcCoords(const cv::Mat& hostImage, KEY_B& key_b) {
     int blockSize = 4;
-    std::vector<cv::Mat> image_blocks = splitIntoBlocks(hostImage, blockSize);
+    std::vector<cv::Mat> image_blocks = splitIntoBlocks(hostImage);
     std::vector<size_t> coords;
     for (size_t i = 0; i < image_blocks.size(); i++) {
         std::pair<int, int> block_data = {i, key_b[i / 16]};
@@ -226,7 +230,7 @@ cv::Mat embedWatermarkLayer(const cv::Mat& hostImage, const cv::Mat& wm, double 
     int blockSize = 4;
     // Required number of blocks = watermark pixels * 15 (12 for upper bits + 3 for lower bits after POB)
     size_t requiredBlocks = wm.rows * wm.cols * 15;
-    std::vector<cv::Mat> blocks = splitIntoBlocks(hostImage, blockSize);
+    std::vector<cv::Mat> blocks = splitIntoBlocks(hostImage);
 
     std::vector<size_t> coords = calcCoords(hostImage, key_b);
     if (coords.size() < requiredBlocks) {
@@ -254,7 +258,7 @@ cv::Mat embedWatermarkLayer(const cv::Mat& hostImage, const cv::Mat& wm, double 
             blocks[block_index] = embedBit(blocks[block_index], t, 2, bit);
         }
     }
-    return assembleImage(blocks, hostImage.rows, hostImage.cols, blockSize);
+    return assembleImage(blocks, hostImage.rows, hostImage.cols);
 }
 
 // Function to extract watermark from watermarked image
@@ -263,7 +267,7 @@ cv::Mat extractWatermarkLayer(const cv::Mat& watermarkedImage, double t, unsigne
 
     int blockSize = 4;
     size_t requiredBlocks = WM_SIZE * WM_SIZE * 15;
-    std::vector<cv::Mat> blocks = splitIntoBlocks(watermarkedImage, blockSize);
+    std::vector<cv::Mat> blocks = splitIntoBlocks(watermarkedImage);
 
     std::vector<size_t> coords = calcCoords(watermarkedImage, key_b);
     if (coords.size() < requiredBlocks) {
@@ -306,6 +310,11 @@ cv::Mat extractWatermarkLayer(const cv::Mat& watermarkedImage, double t, unsigne
 
 // Function to embed watermark into host image
 cv::Mat embedWatermark(const cv::Mat& hostImage, const cv::Mat& wm, double t) {
+    std::string file_name_key_b = "keys/KEY_B.txt";
+
+    std::ofstream outFile_key_b(file_name_key_b);
+    outFile_key_b.close();
+
     std::vector<cv::Mat> img_channels;
     cv::split(hostImage, img_channels);
 
