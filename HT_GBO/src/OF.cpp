@@ -58,11 +58,12 @@ double objectiveFunction(std::vector<cv::Mat> originalImages, std::vector<cv::Ma
         double omega = calc_omega(originalImages[i], watermarkedImages[i], originalWMs[i], extractedWMs[i]);
         std::vector<WeightAttackPair> attackedImages = createAttacks(originalImages[i]);
         for (int j = 0; j < m; ++j) {
-            cv::Mat extractedWM = extractWatermark(watermarkedImages[i], t); //Tagir, u need to add here method for extracting WM
+            cv::Mat attackedImage = attackedImages[j].second();
+            cv::Mat extractedWM = extractWatermark(attackedImage, t); 
             double nc = computeNC(originalWMs[i], extractedWM);
             double ber = computeBER(originalWMs[i], extractedWM);
-            result += (omega * attackedImages[i].first * nc * ber);
+            result += (omega * attackedImages[j].first * nc * (1,0 - ber));
         }
     }
-    return result;
+    return result / (n * m);
 }
