@@ -56,7 +56,7 @@ double objectiveFunction(std::vector<cv::Mat> originalImages, std::vector<cv::Ma
     int m = 7 * 3;
     for (int i = 0; i < n; ++i) {
         double omega = calc_omega(originalImages[i], watermarkedImages[i], originalWMs[i], extractedWMs[i]);
-        std::vector<WeightAttackPair> attackedImages = createAttacks(originalImages[i]);
+        std::vector<WeightAttackPair> attackedImages = createAttacks(watermarkedImages[i]);
         for (int j = 0; j < m; ++j) {
             cv::Mat attackedImage = attackedImages[j].second();
             cv::Mat extractedWM = extractWatermark(attackedImage, t); 
