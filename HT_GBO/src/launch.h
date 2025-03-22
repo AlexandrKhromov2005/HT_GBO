@@ -4,20 +4,26 @@
 #include <string>
 #include <vector>
 #include <opencv2/opencv.hpp>
-#include "image_processing_custom.h"
-#include "gbo.h"
-#include "block_metrics.h"
+#include "test_attacks.h"
 #include "image_metrics.h"
-#include <iostream>
-#include "attacks.h"
+#include "GBO.h"
+#include "image_processing.h"
 #include <functional>
-#include <random>
 #include <fstream>
-#include <sstream>
 #include <filesystem>
-#include <algorithm>
+
+using AttackFunction = std::function<cv::Mat(const cv::Mat&)>;
+using MetricCalculator = std::function<double(const cv::Mat&, const cv::Mat&)>;
+
+struct AttackConfig {
+    std::string name;
+    AttackFunction attack;
+    bool use_cropped_comparison = false;
+};
 
 void launch(const std::string& image, const std::string& new_image, const std::string& wm, const std::string& new_wm);
+void embend_wm(const std::string& image, const std::string& new_image, const std::string& wm);
+void get_wm(const std::string& image, const std::string& new_wm);
+cv::Mat get_wm(const cv::Mat& cv_image);
 
 #endif // LAUNCH_H
-
