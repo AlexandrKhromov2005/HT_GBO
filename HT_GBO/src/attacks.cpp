@@ -12,7 +12,14 @@ namespace {
         return cv::imdecode(buf, cv::IMREAD_UNCHANGED);
     }
 
-        cv::Mat applyMedianFilter(const cv::Mat& image, int kernelSize) {
+    cv::Mat applyJPEG2000Compression(const cv::Mat& image, double compressionRatio) {
+        std::vector<uchar> buf;
+        std::vector<int> params = { cv::IMWRITE_JPEG2000_COMPRESSION_X1000, static_cast<int>(compressionRatio * 1000) };
+        cv::imencode(".jp2", image, buf, params);
+        return cv::imdecode(buf, cv::IMREAD_UNCHANGED);
+    }
+
+    cv::Mat applyMedianFilter(const cv::Mat& image, int kernelSize) {
         cv::Mat result;
         cv::medianBlur(image, result, kernelSize);
         return result;
@@ -35,10 +42,10 @@ namespace {
             int r = rowDist(generator);
             int c = colDist(generator);
 
-            if (image.channels() == 1) { // Серое изображение
+            if (image.channels() == 1) {
                 noisy.at<uchar>(r, c) = (rand() % 2) ? 255 : 0;
             }
-            else { // RGB изображение
+            else {
                 cv::Vec3b& pixel = noisy.at<cv::Vec3b>(r, c);
                 bool white = (rand() % 2);
                 pixel[0] = white ? 255 : 0; // Blue
@@ -71,40 +78,36 @@ namespace {
         cv::warpAffine(image, translated, transMat, image.size());
         return translated;
     }
-
 }
 
 // JPEG Compression implementations
+cv::Mat applyJPEGCompression40(const cv::Mat& image) { return applyJPEGCompression(image, 40); }
 cv::Mat applyJPEGCompression70(const cv::Mat& image) { return applyJPEGCompression(image, 70); }
-cv::Mat applyJPEGCompression80(const cv::Mat& image) { return applyJPEGCompression(image, 80); }
-cv::Mat applyJPEGCompression90(const cv::Mat& image) { return applyJPEGCompression(image, 90); }
+
+// JPEG2000 Compression implementations
+cv::Mat applyJPEG2000Compression41(const cv::Mat& image) { return applyJPEG2000Compression(image, 4.1); }
+cv::Mat applyJPEG2000Compression71(const cv::Mat& image) { return applyJPEG2000Compression(image, 7.1); }
 
 // Median Filter implementations
-cv::Mat applyMedianFilter3(const cv::Mat& image) { return applyMedianFilter(image, 3); }
-cv::Mat applyMedianFilter5(const cv::Mat& image) { return applyMedianFilter(image, 5); }
-cv::Mat applyMedianFilter7(const cv::Mat& image) { return applyMedianFilter(image, 7); }
+cv::Mat applyMedianFilter3x3(const cv::Mat& image) { return applyMedianFilter(image, 3); }
+cv::Mat applyMedianFilter5x5(const cv::Mat& image) { return applyMedianFilter(image, 5); }
 
 // Gaussian Filter implementations
-cv::Mat applyGaussianFilter3(const cv::Mat& image) { return applyGaussianFilter(image, 3, 0.5); }
-cv::Mat applyGaussianFilter5(const cv::Mat& image) { return applyGaussianFilter(image, 5, 1.0); }
-cv::Mat applyGaussianFilter7(const cv::Mat& image) { return applyGaussianFilter(image, 7, 1.5); }
+cv::Mat applyGaussianFilter3x3(const cv::Mat& image) { return applyGaussianFilter(image, 3, 0.5); }
+cv::Mat applyGaussianFilter5x5(const cv::Mat& image) { return applyGaussianFilter(image, 5, 1.0); }
 
-// Salt & Pepper implementations
+// Salt & Pepper Noise implementations
+cv::Mat applySaltPepperNoise02(const cv::Mat& image) { return applySaltPepperNoise(image, 0.02); }
 cv::Mat applySaltPepperNoise1(const cv::Mat& image) { return applySaltPepperNoise(image, 0.01); }
-cv::Mat applySaltPepperNoise5(const cv::Mat& image) { return applySaltPepperNoise(image, 0.05); }
-cv::Mat applySaltPepperNoise10(const cv::Mat& image) { return applySaltPepperNoise(image, 0.1); }
 
 // Rotation implementations
-cv::Mat applyRotationAttack10(const cv::Mat& image) { return applyRotationAttack(image, 10.0); }
-cv::Mat applyRotationAttack45(const cv::Mat& image) { return applyRotationAttack(image, 45.0); }
-cv::Mat applyRotationAttack90(const cv::Mat& image) { return applyRotationAttack(image, 90.0); }
+cv::Mat applyRotationAttack15(const cv::Mat& image) { return applyRotationAttack(image, 15.0); }
+cv::Mat applyRotationAttack30(const cv::Mat& image) { return applyRotationAttack(image, 30.0); }
 
 // Scaling implementations
 cv::Mat applyScalingAttack05(const cv::Mat& image) { return applyScalingAttack(image, 0.5); }
-cv::Mat applyScalingAttack15(const cv::Mat& image) { return applyScalingAttack(image, 1.5); }
 cv::Mat applyScalingAttack20(const cv::Mat& image) { return applyScalingAttack(image, 2.0); }
 
 // Translation implementations
-cv::Mat applyTranslationAttack10(const cv::Mat& image) { return applyTranslationAttack(image, 10, 10); }
-cv::Mat applyTranslationAttack20(const cv::Mat& image) { return applyTranslationAttack(image, 20, 20); }
-cv::Mat applyTranslationAttack30(const cv::Mat& image) { return applyTranslationAttack(image, 30, 30); }
+cv::Mat applyTranslationAttack10_10(const cv::Mat& image) { return applyTranslationAttack(image, 10, 10); }
+cv::Mat applyTranslationAttack20_40(const cv::Mat& image) { return applyTranslationAttack(image, 20, 40); }
