@@ -13,7 +13,6 @@ double computeImageMSE(const cv::Mat& image1, const cv::Mat& image2) {
     cv::absdiff(image1, image2, diff);
     diff.convertTo(diff, CV_32F);
     diff = diff.mul(diff);
-
     cv::Scalar mse_scalar = cv::mean(diff);
     double mse = (mse_scalar[0] + mse_scalar[1] + mse_scalar[2]) / 3.0;
 
@@ -43,7 +42,7 @@ double computeImageBER(const cv::Mat& image1, const cv::Mat& image2) {
     cv::split(image2, channels2);
 
     double ber_total = 0.0;
-    for (int i = 0; i < 3; i++) {  // Обрабатываем каждый канал отдельно
+    for (int i = 0; i < 3; i++) { 
         cv::threshold(channels1[i], bin1, 127, 255, cv::THRESH_BINARY);
         cv::threshold(channels2[i], bin2, 127, 255, cv::THRESH_BINARY);
 
@@ -56,7 +55,7 @@ double computeImageBER(const cv::Mat& image1, const cv::Mat& image2) {
         ber_total += static_cast<double>(error_count) / total_bits;
     }
 
-    return ber_total / 3.0;  // Усредняем BER по всем каналам
+    return ber_total / 3.0;  
 }
 
 double computeImageNCC(const cv::Mat& img1, const cv::Mat& img2) {
@@ -88,7 +87,6 @@ double computeImageSSIM(const cv::Mat& img1, const cv::Mat& img2) {
     cv::Mat img1f, img2f;
     img1.convertTo(img1f, CV_32F);
     img2.convertTo(img2f, CV_32F);
-
     double C1 = 6.5025, C2 = 58.5225;
 
     cv::Mat mu1, mu2, sigma1_2, sigma2_2, sigma12;
@@ -116,5 +114,5 @@ double computeImageSSIM(const cv::Mat& img1, const cv::Mat& img2) {
     divide(t1.mul(t2), t3.mul(t4), ssim_map);
 
     cv::Scalar ssim_scalar = mean(ssim_map);
-    return (ssim_scalar[0] + ssim_scalar[1] + ssim_scalar[2]) / 3.0;  // Среднее по каналам
+    return (ssim_scalar[0] + ssim_scalar[1] + ssim_scalar[2]) / 3.0;  
 }

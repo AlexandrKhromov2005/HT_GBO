@@ -14,6 +14,7 @@
     <ClCompile Include="src\population.cpp" />
     <ClCompile Include="src\random_utils.cpp" />
     <ClCompile Include="src\image_metrics.cpp" />
+    <ClCompile Include="src\test_attacks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\affine.h" />
@@ -29,6 +30,7 @@
     <ClInclude Include="src\population.h" />
     <ClInclude Include="src\random_utils.h" />
     <ClInclude Include="image_metrics.h" />
+    <ClInclude Include="src\test_attacks.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\x64\Release\images\watermark.png" />

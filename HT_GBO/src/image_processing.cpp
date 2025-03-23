@@ -42,7 +42,6 @@ cv::Mat importImage(const std::string& imagePath) {
 
     try {
         cv::Mat convertedImage;
-        // Конвертируем цветовое пространство из BGR в RGB
         cv::cvtColor(image, convertedImage, cv::COLOR_BGR2RGB);
         return convertedImage;
     }
@@ -154,17 +153,12 @@ void print_block(cv::Mat block) {
 
 // Function to embed one bit into block using frequency domain quantization
 cv::Mat embedBit(cv::Mat block, double t, unsigned char mode, unsigned char bit_wm) {
-    // Convert block to double format for precise calculations
     cv::Mat block_d;
     block.convertTo(block_d, CV_64F);
     Hadamard hadamardUtil;
-    // Forward Hadamard transform (convert to frequency domain)
     hadamardUtil.applyHadamard(block_d);
 
-    //print_block(block_d);
-
     if (mode == 1) {
-        // Mode 1: embed bit into first 3 coefficients of the first row
         for (int i = 0; i < 3; i++) {
             double value = block_d.at<double>(0, i);
             int quant = static_cast<int>(std::round(value / t));
@@ -177,7 +171,7 @@ cv::Mat embedBit(cv::Mat block, double t, unsigned char mode, unsigned char bit_
             }
         }
     }
-    else { // mode == 2: embedding for lower bits
+    else { 
         double value = block_d.at<double>(0, 0);
         int quant = static_cast<int>(std::round(value / t));
         unsigned char e_cond = (quant % 2) ^ bit_wm;
@@ -188,7 +182,7 @@ cv::Mat embedBit(cv::Mat block, double t, unsigned char mode, unsigned char bit_
             block_d.at<double>(0, 0) = quant * t - t / 3.0;
         }
     }
-    // Inverse Hadamard transform (convert back to spatial domain)
+
     hadamardUtil.applyInverseHadamard(block_d);
     cv::Mat block_out;
     block_d.convertTo(block_out, CV_8UC1);
@@ -200,22 +194,18 @@ unsigned char extractBit(const cv::Mat& block, double t, unsigned char mode) {
     cv::Mat block_d;
     block.convertTo(block_d, CV_64F);
     Hadamard hadamardUtil;
-    // Forward Hadamard transform to convert to frequency domain
     hadamardUtil.applyHadamard(block_d);
     unsigned int sum = 0;
     if (mode == 1) {
-        // Extraction from first 3 coefficients with voting
         for (int i = 0; i < 3; i++) {
             double value = block_d.at<double>(0, i);
             int quant = static_cast<int>(std::trunc(value / t));
             unsigned char bit = quant % 2;
-            //std::cout << "extacted bit = " << (int)bit << "\n";
             sum += bit;
         }
-        //std::cout << "\n";
         return (sum >= 2) ? 1 : 0;
     }
-    else { // mode == 2
+    else { 
         double value = block_d.at<double>(0, 0);
         int quant = static_cast<int>(std::trunc(value / t));
         return quant % 2;
@@ -228,7 +218,6 @@ cv::Mat embedWatermarkLayer(const cv::Mat& hostImage, const cv::Mat& wm, double 
     KEY_B key_b = get();
 
     int blockSize = 4;
-    // Required number of blocks = watermark pixels * 15 (12 for upper bits + 3 for lower bits after POB)
     size_t requiredBlocks = wm.rows * wm.cols * 15;
     std::vector<cv::Mat> blocks = splitIntoBlocks(hostImage);
 
@@ -239,21 +228,17 @@ cv::Mat embedWatermarkLayer(const cv::Mat& hostImage, const cv::Mat& wm, double 
     }
     for (int i = 0; i < WM_SIZE * WM_SIZE; i++) {
         unsigned char wm_pixel = wm.at<uchar>(i);
-        unsigned char upper_bits = encrypted_wm[i].first; // Upper 4 bits
-        unsigned char lower_bits = encrypted_wm[i].second;        // Lower 4 bits
+        unsigned char upper_bits = encrypted_wm[i].first; 
+        unsigned char lower_bits = encrypted_wm[i].second;        
 
-        // Embed upper 4 bits: each bit embedded into 3 blocks (for robustness - voting)
         for (int j = 0; j < 4; j++) {
             unsigned char bit = (upper_bits >> j + 4) & 1;
-            //std::cout << "up bit for embed = " << (int)bit << "\n";
-            for (int k = 0; k < 3; k++) {
-                size_t block_index = coords[i * 15 + j * 3 + k];
+                size_t block_index = coords[i * 7 + j];
                 blocks[block_index] = embedBit(blocks[block_index], t, 1, bit);
-            }
         }
 
         for (int j = 0; j < 3; j++) {
-            size_t block_index = coords[i * 15 + 12 + j];
+            size_t block_index = coords[i * 7 + 4 + j];
             unsigned char bit = (lower_bits >> j) & 1;
             blocks[block_index] = embedBit(blocks[block_index], t, 2, bit);
         }
@@ -280,21 +265,14 @@ cv::Mat extractWatermarkLayer(const cv::Mat& watermarkedImage, double t, unsigne
     for (int i = 0; i < WM_SIZE * WM_SIZE; i++) {
         unsigned char upper_bits = 0;
         unsigned char lower_compressed = 0;
-        // Extract upper 4 bits from 12 blocks (3 blocks per bit) with voting
         for (int j = 0; j < 4; j++) {
             unsigned int sum = 0;
-            for (int k = 0; k < 3; k++) {
-                size_t block_index = coords[i * 15 + j * 3 + k];
-                unsigned char bit = extractBit(blocks[block_index], t, 1);
-                sum += bit;
-            }
-            unsigned char bit_extracted = (sum >= 2) ? 1 : 0;
-            //std::cout << "ext up bit = " << (int)bit_extracted << "\n";
-            upper_bits |= (bit_extracted << j + 4);
+            size_t block_index = coords[i * 7 + j];
+            unsigned char bit = extractBit(blocks[block_index], t, 1);
+            upper_bits |= (bit << j + 4);
         }
-        // Extract compressed lower bits from 3 blocks
         for (int j = 0; j < 3; j++) {
-            size_t block_index = coords[i * 15 + 12 + j];
+            size_t block_index = coords[i * 7 + 4 + j];
             unsigned char bit = extractBit(blocks[block_index], t, 2);
             lower_compressed |= (bit << j);
         }
@@ -348,3 +326,4 @@ cv::Mat extractWatermark(const cv::Mat& watermarkedImage, double t) {
 
     return wm;
 }
+

@@ -78,16 +78,16 @@ void processAttack(
         double ssim = computeImageSSIM(comparisonImg, attackedImg);
 
         // Update max and min values
-        max_mse = std::max(max_mse, mse);
-        min_mse = std::min(min_mse, mse);
-        max_psnr = std::max(max_psnr, psnr);
-        min_psnr = std::min(min_psnr, psnr);
-        max_ncc = std::max(max_ncc, ncc);
-        min_ncc = std::min(min_ncc, ncc);
-        max_ber = std::max(max_ber, ber);
-        min_ber = std::min(min_ber, ber);
-        max_ssim = std::max(max_ssim, ssim);
-        min_ssim = std::min(min_ssim, ssim);
+        max_mse = (std::max)(max_mse, mse);
+        min_mse = (std::min)(min_mse, mse);
+        max_psnr = (std::max)(max_psnr, psnr);
+        min_psnr = (std::min)(min_psnr, psnr);
+        max_ncc = (std::max)(max_ncc, ncc);
+        min_ncc = (std::min)(min_ncc, ncc);
+        max_ber = (std::max)(max_ber, ber);
+        min_ber = (std::min)(min_ber, ber);
+        max_ssim = (std::max)(max_ssim, ssim);
+        min_ssim = (std::min)(min_ssim, ssim);
 
         // Accumulate totals
         mse_total += mse;
@@ -114,7 +114,7 @@ void launch(const std::string& image, const std::string& new_image, const std::s
     cv::Mat originalWM = importImage(wm);
 
     // Embed watermark multiple times to get multiple embedded images
-    for (size_t i = 0; i < 10; ++i) {
+    for (size_t i = 0; i < 1; ++i) {
         embend_wm(image, new_image, wm);
         get_wm(new_image, new_wm);
         embeddedImages.push_back(importImage(new_image));

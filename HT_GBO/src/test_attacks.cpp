@@ -1,128 +1,131 @@
 #include "test_attacks.h"
 
+// A1: Сжатие JPEG с качеством 40
+cv::Mat jpegCompression40(const cv::Mat& img) {
+    std::vector<uchar> buffer;
+    std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 40 };
+    cv::imencode(".jpg", img, buffer, params);
+    return cv::imdecode(buffer, cv::IMREAD_COLOR);
+}
 
-// Brightness Increase
-cv::Mat brightnessIncrease(const cv::Mat& image, int value) {
+// A2: Сжатие JPEG с качеством 70
+cv::Mat jpegCompression70(const cv::Mat& img) {
+    std::vector<uchar> buffer;
+    std::vector<int> params = { cv::IMWRITE_JPEG_QUALITY, 70 };
+    cv::imencode(".jpg", img, buffer, params);
+    return cv::imdecode(buffer, cv::IMREAD_COLOR);
+}
+
+// A5: Медианный фильтр 3x3
+cv::Mat medianFilter3x3(const cv::Mat& img) {
     cv::Mat result;
-    image.convertTo(result, -1, 1, value);  // Increase brightness by a constant value
+    cv::medianBlur(img, result, 3);
     return result;
 }
 
-// Brightness Decrease
-cv::Mat brightnessDecrease(const cv::Mat& image, int value) {
+// A6: Медианный фильтр 5x5
+cv::Mat medianFilter5x5(const cv::Mat& img) {
     cv::Mat result;
-    image.convertTo(result, -1, 1, -value);  // Decrease brightness by a constant value
+    cv::medianBlur(img, result, 5);
     return result;
 }
 
-// Contrast Increase
-cv::Mat contrastIncrease(const cv::Mat& image, double alpha) {
+// A7: Гауссовский фильтр 3x3
+cv::Mat gaussianFilter3x3(const cv::Mat& img) {
     cv::Mat result;
-    image.convertTo(result, -1, alpha, 0);  // Increase contrast
+    cv::GaussianBlur(img, result, cv::Size(3, 3), 0);
     return result;
 }
 
-// Contrast Decrease
-cv::Mat contrastDecrease(const cv::Mat& image, double alpha) {
+// A8: Гауссовский фильтр 5x5
+cv::Mat gaussianFilter5x5(const cv::Mat& img) {
     cv::Mat result;
-    image.convertTo(result, -1, alpha, 0);  // Decrease contrast
+    cv::GaussianBlur(img, result, cv::Size(5, 5), 0);
     return result;
 }
 
-// Salt-Pepper Noise
-cv::Mat saltPepperNoise(const cv::Mat& image, double noiseProb) {
-    cv::Mat result = image.clone();
-    int numPixels = result.rows * result.cols;
-    for (int i = 0; i < numPixels; i++) {
-        if (rand() % 100 < noiseProb * 100) {
-            int row = rand() % result.rows;
-            int col = rand() % result.cols;
-            if (rand() % 2 == 0) {
-                result.at<uchar>(row, col) = 0;  // Salt
-            }
-            else {
-                result.at<uchar>(row, col) = 255;  // Pepper
-            }
-        }
+// A9: Шум 0.2%
+cv::Mat saltPepperNoise02(const cv::Mat& img) {
+    cv::Mat result = img.clone();
+    int n = 0.002 * img.total();
+
+    for (int i = 0; i < n; i++) {
+        int row = rand() % img.rows;
+        int col = rand() % img.cols;
+        result.at<cv::Vec3b>(row, col) = (rand() % 2) ? cv::Vec3b(255, 255, 255) : cv::Vec3b(0, 0, 0);
     }
     return result;
 }
 
-// Speckle Noise
-cv::Mat speckleNoise(const cv::Mat& image, double noiseStddev) {
-    cv::Mat noise = cv::Mat(image.size(), CV_64F);
-    randn(noise, 0, noiseStddev);  // Generate Gaussian noise
-    cv::Mat result;
-    image.convertTo(result, CV_64F);
-    result = result + noise;
-    result.convertTo(result, image.type());
+// A10: Шум 1%
+cv::Mat saltPepperNoise1(const cv::Mat& img) {
+    cv::Mat result = img.clone();
+    int n = 0.01 * img.total();
+
+    for (int i = 0; i < n; i++) {
+        int row = rand() % img.rows;
+        int col = rand() % img.cols;
+        result.at<cv::Vec3b>(row, col) = (rand() % 2) ? cv::Vec3b(255, 255, 255) : cv::Vec3b(0, 0, 0);
+    }
     return result;
 }
 
-// Histogram Equalization
-cv::Mat histogramEqualization(const cv::Mat& image) {
-    cv::Mat result;
-    cv::equalizeHist(image, result);
-    return result;
+// AA: Поворот на 15° и обратно
+cv::Mat rotate15(const cv::Mat& img) {
+    cv::Point2f center(img.cols / 2.0f, img.rows / 2.0f);
+    cv::Mat rot = cv::getRotationMatrix2D(center, 15, 1.0);
+    cv::Mat rotated;
+    cv::warpAffine(img, rotated, rot, img.size());
+    cv::warpAffine(rotated, rotated, cv::getRotationMatrix2D(center, -15, 1.0), img.size());
+    return rotated;
 }
 
-// Sharpening
-cv::Mat sharpening(const cv::Mat& image) {
-    cv::Mat kernel = (cv::Mat_<float>(3, 3) <<
-        0, -1, 0,
-        -1, 5, -1,
-        0, -1, 0);
-    cv::Mat result;
-    cv::filter2D(image, result, image.depth(), kernel);
-    return result;
+// AB: Поворот на 30° и обратно
+cv::Mat rotate30(const cv::Mat& img) {
+    cv::Point2f center(img.cols / 2.0f, img.rows / 2.0f);
+    cv::Mat rot = cv::getRotationMatrix2D(center, 30, 1.0);
+    cv::Mat rotated;
+    cv::warpAffine(img, rotated, rot, img.size());
+    cv::warpAffine(rotated, rotated, cv::getRotationMatrix2D(center, -30, 1.0), img.size());
+    return rotated;
 }
 
-// JPEG Compression
-cv::Mat jpegCompression(const cv::Mat& image, int quality) {
-    std::vector<int> compression_params = { cv::IMWRITE_JPEG_QUALITY, quality };
-    std::vector<uchar> encoded_image;
-    cv::imencode(".jpg", image, encoded_image, compression_params);
-    return cv::imdecode(encoded_image, cv::IMREAD_GRAYSCALE);
+// AC: Увеличение 0.5x и обратно
+cv::Mat scale05(const cv::Mat& img) {
+    cv::Mat scaled;
+    cv::resize(img, scaled, cv::Size(), 0.5, 0.5, cv::INTER_LINEAR);
+    cv::resize(scaled, scaled, img.size(), 0, 0, cv::INTER_LINEAR);
+    return scaled;
 }
 
-// Gaussian Filtering
-cv::Mat gaussianFiltering(const cv::Mat& image, int ksize) {
-    cv::Mat result;
-    cv::GaussianBlur(image, result, cv::Size(ksize, ksize), 0);
-    return result;
+// AD: Увеличение 4x и обратно
+cv::Mat scale4(const cv::Mat& img) {
+    cv::Mat scaled;
+    cv::resize(img, scaled, cv::Size(), 4.0, 4.0, cv::INTER_LINEAR);
+    cv::resize(scaled, scaled, img.size(), 0, 0, cv::INTER_LINEAR);
+    return scaled;
 }
 
-// Median Filtering
-cv::Mat medianFiltering(const cv::Mat& image, int ksize) {
-    cv::Mat result;
-    cv::medianBlur(image, result, ksize);
-    return result;
+// AE: Сдвиг (10,10) и обратно
+cv::Mat translate10(const cv::Mat& img) {
+    cv::Mat trans = (cv::Mat_<double>(2, 3) << 1, 0, 10, 0, 1, 10);
+    cv::Mat translated;
+    cv::warpAffine(img, translated, trans, img.size());
+    trans.at<double>(0, 2) = -10;
+    trans.at<double>(1, 2) = -10;
+    cv::warpAffine(translated, translated, trans, img.size());
+    return translated;
 }
 
-// Average Filtering
-cv::Mat averageFiltering(const cv::Mat& image, int ksize) {
-    cv::Mat result;
-    cv::blur(image, result, cv::Size(ksize, ksize));
-    return result;
+// AF: Сдвиг (20,40) и обратно
+cv::Mat translate20_40(const cv::Mat& img) {
+    cv::Mat trans = (cv::Mat_<double>(2, 3) << 1, 0, 20, 0, 1, 40);
+    cv::Mat translated;
+    cv::warpAffine(img, translated, trans, img.size());
+    trans.at<double>(0, 2) = -20;
+    trans.at<double>(1, 2) = -40;
+    cv::warpAffine(translated, translated, trans, img.size());
+    return translated;
 }
 
-// Cropping from Corner
-cv::Mat cropFromCorner(const cv::Mat& image, int cropSize) {
-    cv::Rect region(0, 0, cropSize, cropSize);
-    return image(region);
-}
-
-// Cropping from Center
-cv::Mat cropFromCenter(const cv::Mat& image, int cropSize) {
-    int x = (image.cols - cropSize) / 2;
-    int y = (image.rows - cropSize) / 2;
-    cv::Rect region(x, y, cropSize, cropSize);
-    return image(region);
-}
-
-// Cropping from Edge
-cv::Mat cropFromEdge(const cv::Mat& image, int cropSize) {
-    cv::Rect region(image.cols - cropSize, image.rows - cropSize, cropSize, cropSize);
-    return image(region);
-}
 

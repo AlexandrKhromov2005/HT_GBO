@@ -41,7 +41,7 @@ void Population::initOf(const cv::Mat& hostImage, const cv::Mat& wm) {
 }
 
 void Population::update(VecOf trial, size_t vec_ind) {
-    if (trial.second > vecs[vec_ind].second) { // Чем больше OF, тем лучше
+    if (trial.second > vecs[vec_ind].second) { 
         vecs[vec_ind] = trial;
         if (vecs[vec_ind].second > vecs[best_ind].second) {
             best_ind = vec_ind;
@@ -51,3 +51,4 @@ void Population::update(VecOf trial, size_t vec_ind) {
         worst_vec = vecs[vec_ind];
     }
 }
+

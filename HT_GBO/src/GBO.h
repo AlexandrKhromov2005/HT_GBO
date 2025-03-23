@@ -18,3 +18,4 @@ public:
 };
 
 #endif // GBO_H
+
