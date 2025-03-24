@@ -126,15 +126,15 @@ std::string computeMD5(const std::pair<int, int>& pair) {
 }
 
 // Function to compute embedding coordinates (simplified: taking all block indices here)
-std::vector<size_t> calcCoords(const cv::Mat& hostImage, KEY_B& key_b) {
+std::vector<size_t> calcCoords(const cv::Mat& hostImage, KEY_B& key_b, unsigned char layer) {
     int blockSize = 4;
     std::vector<cv::Mat> image_blocks = splitIntoBlocks(hostImage);
     std::vector<size_t> coords;
     for (size_t i = 0; i < image_blocks.size(); i++) {
-        std::pair<int, int> block_data = {i, key_b[i / 16]};
+        std::pair<int, int> block_data = {i, key_b[(layer * 1024) + (i / 16)]};
         std::string hash = computeMD5(block_data);
         
-        if (hash[0] != 'a'){
+        if (hash[0] != 'a' && hash[0] != 'b' && hash[0] != 'c'){
             coords.push_back(i);
         }
     }
@@ -218,10 +218,10 @@ cv::Mat embedWatermarkLayer(const cv::Mat& hostImage, const cv::Mat& wm, double 
     KEY_B key_b = get();
 
     int blockSize = 4;
-    size_t requiredBlocks = wm.rows * wm.cols * 15;
+    size_t requiredBlocks = wm.rows * wm.cols * 7;
     std::vector<cv::Mat> blocks = splitIntoBlocks(hostImage);
 
-    std::vector<size_t> coords = calcCoords(hostImage, key_b);
+    std::vector<size_t> coords = calcCoords(hostImage, key_b, layer);
     if (coords.size() < requiredBlocks) {
         std::cerr << "Not enough blocks available for embedding watermark!" << std::endl;
         return cv::Mat();
@@ -251,10 +251,10 @@ cv::Mat extractWatermarkLayer(const cv::Mat& watermarkedImage, double t, unsigne
     KEY_B key_b = get();
 
     int blockSize = 4;
-    size_t requiredBlocks = WM_SIZE * WM_SIZE * 15;
+    size_t requiredBlocks = WM_SIZE * WM_SIZE * 7;
     std::vector<cv::Mat> blocks = splitIntoBlocks(watermarkedImage);
 
-    std::vector<size_t> coords = calcCoords(watermarkedImage, key_b);
+    std::vector<size_t> coords = calcCoords(watermarkedImage, key_b, layer);
     if (coords.size() < requiredBlocks) {
         std::cerr << "Not enough blocks available for extracting watermark!" << std::endl;
         return cv::Mat();

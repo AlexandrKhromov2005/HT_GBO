@@ -31,37 +31,34 @@ double computeImagePSNR(const cv::Mat& image1, const cv::Mat& image2) {
 }
 
 double computeImageBER(const cv::Mat& image1, const cv::Mat& image2) {
-    if (image1.size() != image2.size() || image1.type() != image2.type()) {
-        std::cerr << "Error: Images must have the same size and type." << std::endl;
-        return -1;
+    if (image1.size() != image2.size() || image1.type() != CV_8UC3 || image2.type() != CV_8UC3) {
+        std::cerr << "Error: Images must have the same size and be RGB (CV_8UC3)." << std::endl;
+        return -1.0;
     }
 
-    cv::Mat bin1, bin2;
-    cv::Mat channels1[3], channels2[3];
+    std::vector<cv::Mat> channels1, channels2;
     cv::split(image1, channels1);
     cv::split(image2, channels2);
 
-    double ber_total = 0.0;
-    for (int i = 0; i < 3; i++) { 
-        cv::threshold(channels1[i], bin1, 127, 255, cv::THRESH_BINARY);
-        cv::threshold(channels2[i], bin2, 127, 255, cv::THRESH_BINARY);
+    double total_errors = 0.0;
+    for (int c = 0; c < 3; ++c) {
+        cv::Mat bin1, bin2;
+        cv::threshold(channels1[c], bin1, 127, 1, cv::THRESH_BINARY);
+        cv::threshold(channels2[c], bin2, 127, 1, cv::THRESH_BINARY);
 
-        bin1 = bin1 / 255;
-        bin2 = bin2 / 255;
-
-        int error_count = cv::countNonZero(bin1 != bin2);
-        int total_bits = bin1.rows * bin1.cols;
-
-        ber_total += static_cast<double>(error_count) / total_bits;
+        cv::Mat diff;
+        cv::absdiff(bin1, bin2, diff);
+        total_errors += cv::countNonZero(diff);
     }
 
-    return ber_total / 3.0;  
+    int total_bits = 3 * image1.rows * image1.cols;
+    return total_errors / total_bits;
 }
 
 double computeImageNCC(const cv::Mat& img1, const cv::Mat& img2) {
-    if (img1.size() != img2.size() || img1.type() != img2.type()) {
-        std::cerr << "Error: Images must have the same size and type." << std::endl;
-        return -1;
+    if (img1.size() != img2.size() || img1.type() != CV_8UC3 || img2.type() != CV_8UC3) {
+        std::cerr << "Error: Images must have the same size and be RGB (CV_8UC3)." << std::endl;
+        return -1.0;
     }
 
     cv::Mat img1f, img2f;
@@ -69,13 +66,24 @@ double computeImageNCC(const cv::Mat& img1, const cv::Mat& img2) {
     img2.convertTo(img2f, CV_32F);
 
     cv::Scalar mean1, stddev1, mean2, stddev2;
-    meanStdDev(img1f, mean1, stddev1);
-    meanStdDev(img2f, mean2, stddev2);
+    cv::meanStdDev(img1f, mean1, stddev1);
+    cv::meanStdDev(img2f, mean2, stddev2);
+
+    // ѕроверка нулевого стандартного отклонени€
+    for (int c = 0; c < 3; ++c) {
+        if (stddev1[c] == 0 || stddev2[c] == 0) {
+            std::cerr << "Warning: Zero standard deviation in channel " << c << std::endl;
+            return -1.0;
+        }
+    }
 
     cv::Mat norm1 = (img1f - mean1) / stddev1;
     cv::Mat norm2 = (img2f - mean2) / stddev2;
 
-    return mean(norm1.mul(norm2))[0];
+    cv::Mat product = norm1.mul(norm2);
+    cv::Scalar ncc_per_channel = cv::mean(product);
+
+    return (ncc_per_channel[0] + ncc_per_channel[1] + ncc_per_channel[2]) / 3.0;
 }
 
 double computeImageSSIM(const cv::Mat& img1, const cv::Mat& img2) {

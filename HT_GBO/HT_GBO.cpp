@@ -41,7 +41,6 @@ int main() {
         std::cout << "T = " << optimizer.optimal_t << "\n";
 
         cv::Mat result = embedWatermark(host, wm, optimizer.optimal_t);
-        /*cv::Mat result = embedWatermark(host, wm, 30);*/
 
         exportImage(result, "images/" + new_image_name);
     }
