@@ -3,6 +3,6 @@
 #define VEC_SIZE 1
 #define TH 1.0
 #define PR 0.5
-#define ITERATIONS 20
+#define ITERATIONS 40
 #define POP_SIZE 10
 #define M_PI 3.14159265358979323846

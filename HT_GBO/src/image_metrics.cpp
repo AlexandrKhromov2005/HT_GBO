@@ -56,34 +56,44 @@ double computeImageBER(const cv::Mat& image1, const cv::Mat& image2) {
 }
 
 double computeImageNCC(const cv::Mat& img1, const cv::Mat& img2) {
-    if (img1.size() != img2.size() || img1.type() != CV_8UC3 || img2.type() != CV_8UC3) {
-        std::cerr << "Error: Images must have the same size and be RGB (CV_8UC3)." << std::endl;
+    // 1. Проверяем, что изображения не пусты
+    if (img1.empty() || img2.empty()) {
+        std::cerr << "Ошибка: одно из изображений пустое!\n";
         return -1.0;
     }
 
-    cv::Mat img1f, img2f;
-    img1.convertTo(img1f, CV_32F);
-    img2.convertTo(img2f, CV_32F);
-
-    cv::Scalar mean1, stddev1, mean2, stddev2;
-    cv::meanStdDev(img1f, mean1, stddev1);
-    cv::meanStdDev(img2f, mean2, stddev2);
-
-    // Проверка нулевого стандартного отклонения
-    for (int c = 0; c < 3; ++c) {
-        if (stddev1[c] == 0 || stddev2[c] == 0) {
-            std::cerr << "Warning: Zero standard deviation in channel " << c << std::endl;
-            return -1.0;
-        }
+    // 2. Проверяем, что размеры и типы совпадают
+    if (img1.size() != img2.size() || img1.type() != img2.type()) {
+        std::cerr << "Ошибка: изображения должны быть одного размера и типа!\n";
+        return -1.0;
     }
 
-    cv::Mat norm1 = (img1f - mean1) / stddev1;
-    cv::Mat norm2 = (img2f - mean2) / stddev2;
+    // 3. Преобразуем изображения к float32 (CV_32F)
+    cv::Mat f1, f2;
+    img1.convertTo(f1, CV_32F);
+    img2.convertTo(f2, CV_32F);
 
-    cv::Mat product = norm1.mul(norm2);
-    cv::Scalar ncc_per_channel = cv::mean(product);
+    // 4. Преобразуем матрицы к векторному виду (одна колонка, один канал)
+    //    чтобы удобно использовать метод dot().
+    //    reshape(1, total) -> 1 канал, total пикселей строк.
+    f1 = f1.reshape(1, f1.total());
+    f2 = f2.reshape(1, f2.total());
 
-    return (ncc_per_channel[0] + ncc_per_channel[1] + ncc_per_channel[2]) / 3.0;
+    // 5. Считаем числитель (dot product)
+    double numerator = f1.dot(f2);
+
+    // 6. Считаем знаменатель: sqrt( (f1 dot f1) * (f2 dot f2) )
+    double sum1 = f1.dot(f1);
+    double sum2 = f2.dot(f2);
+    double denominator = std::sqrt(sum1 * sum2);
+
+    if (denominator < 1e-12) {
+        std::cerr << "Ошибка: знаменатель близок к нулю!\n";
+        return -1.0;
+    }
+
+    // 7. Возвращаем NCC
+    return numerator / denominator;
 }
 
 double computeImageSSIM(const cv::Mat& img1, const cv::Mat& img2) {
